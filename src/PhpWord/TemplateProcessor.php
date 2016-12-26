@@ -147,7 +147,7 @@ class TemplateProcessor
 
     /**
      * Applies XSL style sheet to template's parts.
-     * 
+     *
      * Note: since the method doesn't make any guess on logic of the provided XSL style sheet,
      * make sure that output is correctly escaped. Otherwise you may get broken document.
      *
@@ -327,9 +327,9 @@ class TemplateProcessor
     public function cloneBlock($blockname, $clones = 1, $replace = true)
     {
         $xmlBlock = null;
-        
+
         $matches = $this->findBlock($blockname);
-        
+
         if (isset($matches[1]))
         {
             $xmlBlock = $matches[1];
@@ -340,11 +340,11 @@ class TemplateProcessor
             }
             if ($replace)
             {
-                $this->temporaryDocumentMainPart = str_replace
+                $this->tempDocumentMainPart = str_replace
                 (
                     $matches[0],
                     implode('', $cloned),
-                    $this->temporaryDocumentMainPart
+                    $this->tempDocumentMainPart
                 );
             }
         }
@@ -362,14 +362,14 @@ class TemplateProcessor
     public function replaceBlock($blockname, $replacement)
     {
         $matches = $this->findBlock($blockname);
-        
+
         if (isset($matches[1]))
         {
-            $this->temporaryDocumentMainPart = str_replace
+            $this->tempDocumentMainPart = str_replace
                 (
                     $matches[0],
                     $replacement,
-                    $this->temporaryDocumentMainPart
+                    $this->tempDocumentMainPart
                 );
         }
     }
@@ -581,12 +581,12 @@ class TemplateProcessor
 
         return substr($this->tempDocumentMainPart, $startPosition, ($endPosition - $startPosition));
     }
-    
+
     private function findBlock($blockname)
     {
         // Parse the XML
-        $xml = new \SimpleXMLElement($this->temporaryDocumentMainPart);
-        
+        $xml = new \SimpleXMLElement($this->tempDocumentMainPart);
+
         // Find the starting and ending tags
         $startNode = false; $endNode = false;
         foreach ($xml->xpath('//w:t') as $node)
@@ -596,44 +596,44 @@ class TemplateProcessor
                 $startNode = $node;
                 continue;
             }
-        
+
             if (strpos($node, '${/'.$blockname.'}') !== false)
             {
                 $endNode = $node;
                 break;
             }
         }
-        
+
         // Make sure we found the tags
         if ($startNode === false || $endNode === false)
         {
             return null;
         }
-        
+
         // Find the parent <w:p> node for the start tag
         $node = $startNode; $startNode = null;
         while (is_null($startNode))
         {
             $node = $node->xpath('..')[0];
-        
+
             if ($node->getName() == 'p')
             {
                 $startNode = $node;
             }
         }
-        
+
         // Find the parent <w:p> node for the end tag
         $node = $endNode; $endNode = null;
         while (is_null($endNode))
         {
             $node = $node->xpath('..')[0];
-        
+
             if ($node->getName() == 'p')
             {
                 $endNode = $node;
             }
         }
-        
+
         /*
          * NOTE: Because SimpleXML reduces empty tags to "self-closing" tags.
          * We need to replace the original XML with the version of XML as
@@ -670,18 +670,18 @@ class TemplateProcessor
          *  </w:p>
          * ```
          */
-        
-        $this->temporaryDocumentMainPart = $xml->asXml();
-        
+
+        $this->tempDocumentMainPart = $xml->asXml();
+
         // Find the xml in between the tags
         $xmlBlock = null;
         preg_match
         (
             '/'.preg_quote($startNode->asXml(), '/').'(.*?)'.preg_quote($endNode->asXml(), '/').'/is',
-            $this->temporaryDocumentMainPart,
+            $this->tempDocumentMainPart,
             $matches
         );
-        
+
         return $matches;
-    }    
+    }
 }
